@@ -8,6 +8,7 @@ server {
     proxy_read_timeout 600s;
 
     location / {
+        default_type application/json;
         set $auth_pass 0;
         if ($http_authorization = "Bearer {{ .ProxyKey }}") {
             set $auth_pass 1;
@@ -16,7 +17,6 @@ server {
             set $auth_pass 1;
         }
         if ($auth_pass = 0) {
-            default_type application/json;
             return 401 '{"error":{"type":"authentication_error","message":"Invalid proxy API key"}}';
         }
 
