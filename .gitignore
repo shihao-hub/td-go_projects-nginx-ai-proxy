@@ -1,0 +1,5 @@
+.env
+aiproxy
+aiproxy.exe
+bin/
+*.log
