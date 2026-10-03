@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"text/template"
 
-	"td-go_projects-nginx-ai-proxy/internal/config"
+	"nginx-ai-proxy/internal/config"
 )
 
 // Render 按模板渲染配置

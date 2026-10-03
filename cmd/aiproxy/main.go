@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"td-go_projects-nginx-ai-proxy/internal/config"
-	"td-go_projects-nginx-ai-proxy/internal/nginx"
-	"td-go_projects-nginx-ai-proxy/internal/tester"
+	"nginx-ai-proxy/internal/config"
+	"nginx-ai-proxy/internal/nginx"
+	"nginx-ai-proxy/internal/tester"
 )
 
 func envPath() string {
