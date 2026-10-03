@@ -28,6 +28,32 @@ aiproxy init && aiproxy reload
 aiproxy status   # 查看 nginx RSS（目标 <10MB）
 ```
 
+## 日志与问题定位
+项目未自定义日志路径，走 Ubuntu 下 nginx 默认日志：
+
+- 错误日志：`/var/log/nginx/error.log`（配置错误、上游不可达、SSL、超时）
+- 访问日志：`/var/log/nginx/access.log`（每个请求的状态码、耗时）
+
+排查顺序（登录服务器后）：
+
+```bash
+aiproxy status                            # 1. 进程是否存活、RSS 是否正常
+sudo tail -n 50 /var/log/nginx/error.log  # 2. 配置/上游错误
+sudo tail -n 50 /var/log/nginx/access.log # 3. 状态码分布
+aiproxy test                              # 4. 本机端到端探活（真实请求 GLM）
+```
+
+常见症状对照：
+
+| 现象 | 大概率原因 |
+| --- | --- |
+| 401 | 客户端 PROXY_KEY 与服务器 `.env` 不一致 |
+| 502 / 504 | 服务器出网到 `open.bigmodel.cn` 不通或超时（防火墙/上游故障） |
+| SSE 中途断 | `proxy_read_timeout`（现 600s）或客户端侧问题 |
+| nginx 起不来 | 先 `sudo nginx -t` 看语法，再看 error.log |
+
+实时跟踪错误日志：`sudo tail -f /var/log/nginx/error.log`；若 nginx 由 systemd 管理，也可用 `journalctl -u nginx -n 50`。
+
 ## 客户端（Windows）
 ```powershell
 Copy-Item python\nanocode\.env.example python\nanocode\.env  # 填入代理地址与 PROXY_KEY
