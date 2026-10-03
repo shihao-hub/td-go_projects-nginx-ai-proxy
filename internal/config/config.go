@@ -10,15 +10,15 @@ import (
 )
 
 type Config struct {
-	Port     string
-	ProxyKey string
-	GlmKey   string
-	Upstream string
-	ConfDst  string
+	Port        string
+	ProxyKey    string
+	GlmKey      string
+	GlmUpstream string
+	ConfDst     string
 }
 
 func defaults() Config {
-	return Config{Port: "8088", Upstream: "https://open.bigmodel.cn/api/anthropic/", ConfDst: "/etc/nginx/conf.d/aiproxy.conf"}
+	return Config{Port: "8088", GlmUpstream: "https://open.bigmodel.cn/api/anthropic/", ConfDst: "/etc/nginx/conf.d/aiproxy.conf"}
 }
 
 // Load 读取 .env 文件（KEY=VALUE，每行一个，支持 # 注释）
@@ -52,7 +52,7 @@ func Load(path string) (Config, error) {
 		c.GlmKey = v
 	}
 	if v, ok := m["GLM_UPSTREAM"]; ok && v != "" {
-		c.Upstream = v
+		c.GlmUpstream = v
 	}
 	if v, ok := m["NGINX_CONF_DST"]; ok && v != "" {
 		c.ConfDst = v

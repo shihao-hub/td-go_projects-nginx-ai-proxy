@@ -1,6 +1,7 @@
 package nginx
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,18 +11,17 @@ import (
 	"nginx-ai-proxy/internal/config"
 )
 
-// Render 按模板渲染配置
+// Render 按模板渲染配置（先渲染到内存，成功后再写盘，避免出错时截断线上配置）
 func Render(tmplPath string, c config.Config, outPath string) error {
 	t, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		return err
 	}
-	f, err := os.Create(outPath)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, c); err != nil {
 		return err
 	}
-	defer f.Close()
-	return t.Execute(f, c)
+	return os.WriteFile(outPath, buf.Bytes(), 0o644)
 }
 
 // Test 执行 nginx -t
