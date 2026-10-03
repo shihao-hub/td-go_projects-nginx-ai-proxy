@@ -7,7 +7,7 @@ server {
     proxy_send_timeout 600s;
     proxy_read_timeout 600s;
 
-    location / {
+    location {{ .GlmPath }} {
         default_type application/json;
         set $auth_pass 0;
         if ($http_authorization = "Bearer {{ .ProxyKey }}") {

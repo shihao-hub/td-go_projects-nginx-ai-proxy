@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -14,6 +15,7 @@ type Config struct {
 	ProxyKey    string
 	GlmKey      string
 	GlmUpstream string
+	GlmPath     string
 	ConfDst     string
 }
 
@@ -59,6 +61,14 @@ func Load(path string) (Config, error) {
 	}
 	if err := s.Err(); err != nil {
 		return c, err
+	}
+	u, err := url.Parse(c.GlmUpstream)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return c, fmt.Errorf("GLM_UPSTREAM 无效: %s", c.GlmUpstream)
+	}
+	c.GlmPath = u.Path
+	if c.GlmPath == "" {
+		c.GlmPath = "/"
 	}
 	return c, nil
 }

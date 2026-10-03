@@ -6,7 +6,7 @@
 ```powershell
 uv run scripts/deploy.py --host tencent --dst ~/nginx-ai-proxy
 ```
-脚本自动完成：交叉编译 → scp 上传 → 服务器安装并执行 `init/reload/status`，可重复执行。首次部署前，先在服务器完成下节的 `.env` 初始化。
+脚本自动完成：交叉编译 → scp 上传 → 服务器安装并执行 `init/reload/status`，可重复执行；nginx 未运行时 `reload` 会自动启动。首次部署前，先在服务器完成下节的 `.env` 初始化。
 
 ## 服务器 .env 初始化（仅首次）
 `ssh tencent` 登录后：
