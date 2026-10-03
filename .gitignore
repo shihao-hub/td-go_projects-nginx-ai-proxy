@@ -1,5 +1,5 @@
 .env
-aiproxy
-aiproxy.exe
-bin/
+/aiproxy
+/aiproxy.exe
+/bin/
 *.log
