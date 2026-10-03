@@ -8,6 +8,8 @@ uv run scripts/deploy.py --host tencent --dst ~/nginx-ai-proxy
 ```
 脚本自动完成：交叉编译 → scp 上传 → 服务器安装并执行 `init/reload/status`，可重复执行；nginx 未运行时 `reload` 会自动启动。首次部署前，先在服务器完成下节的 `.env` 初始化。
 
+> **注意**：`nginx -s reload` 只能作用于**已运行**的 nginx；未运行时（如服务器重启后 `/run/nginx.pid` 为空）会报 `invalid PID number "" in "/run/nginx.pid"`。`aiproxy reload` 已内置状态感知：未运行自动启动、运行中热加载，无需手动 `systemctl start`。
+
 ## 服务器 .env 初始化（仅首次）
 `ssh tencent` 登录后：
 ```bash
