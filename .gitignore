@@ -3,3 +3,5 @@
 /aiproxy.exe
 /bin/
 *.log
+__pycache__/
+*.pyc
