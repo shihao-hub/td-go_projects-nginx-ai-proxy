@@ -2,7 +2,7 @@
 """nanocode - minimal claude code alternative
 nanocode - 极简的 Claude Code 替代方案"""
 
-import glob as globlib, json, os, re, subprocess, urllib.request
+import glob as globlib, json, os, re, subprocess, sys, threading, time, urllib.request
 
 
 def load_env(env_path=None):
@@ -232,6 +232,54 @@ def make_schema():
     return result
 
 
+class Spinner:
+    """Context manager for displaying an animated terminal spinner during long operations.
+    长耗时操作期间在终端展示动态转圈（Spinner）的上下文管理器。"""
+
+    FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    ASCII_FRAMES = ["|", "/", "-", "\\"]
+
+    def __init__(self, message="Thinking..."):
+        self.message = message
+        self._stop_event = threading.Event()
+        self._thread = None
+        self._use_ascii = False
+
+    def _spin(self):
+        start_time = time.time()
+        idx = 0
+        while not self._stop_event.is_set():
+            frames = self.ASCII_FRAMES if self._use_ascii else self.FRAMES
+            frame = frames[idx % len(frames)]
+            elapsed = time.time() - start_time
+            line = f"\r{CYAN}{frame}{RESET} {DIM}{self.message} ({elapsed:.1f}s){RESET}"
+            try:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+            except UnicodeEncodeError:
+                self._use_ascii = True
+                continue
+            idx += 1
+            time.sleep(0.08)
+
+    def __enter__(self):
+        if sys.stdout.isatty():
+            self._stop_event.clear()
+            self._thread = threading.Thread(target=self._spin, daemon=True)
+            self._thread.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._thread and self._thread.is_alive():
+            self._stop_event.set()
+            self._thread.join(timeout=0.5)
+            try:
+                sys.stdout.write("\r" + " " * 60 + "\r")
+                sys.stdout.flush()
+            except Exception:
+                pass
+
+
 def call_api(messages, system_prompt):
     """Send conversation messages and tool schemas to the LLM API and return the JSON response.
     向大模型 API 发送对话历史与工具定义，并返回解析后的 JSON 响应。"""
@@ -252,8 +300,10 @@ def call_api(messages, system_prompt):
             **({"Authorization": f"Bearer {OPENROUTER_KEY}"} if OPENROUTER_KEY else {"x-api-key": os.environ.get("ANTHROPIC_API_KEY", "")}),
         },
     )
-    response = urllib.request.urlopen(request)
-    return json.loads(response.read())
+    with Spinner("Thinking..."):
+        response = urllib.request.urlopen(request)
+        raw_data = response.read()
+    return json.loads(raw_data)
 
 
 def separator():
