@@ -96,11 +96,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		base := "http://127.0.0.1:" + c.Port + "/api/anthropic/v1/messages"
+		base := "http://127.0.0.1:" + c.Port + c.ProxyPrefix + "v1/messages"
 		if v := os.Getenv("AIPROXY_URL"); v != "" {
 			base = v
 		}
-		if err := tester.Probe(base, c.ProxyKey); err != nil {
+		if err := tester.Probe(base, c.ProxyKey, c.UpstreamModel); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}

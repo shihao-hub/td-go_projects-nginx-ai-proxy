@@ -2,7 +2,7 @@
 """nanocode - minimal claude code alternative
 nanocode - 极简的 Claude Code 替代方案"""
 
-import glob as globlib, json, os, re, subprocess, sys, threading, time, urllib.request
+import glob as globlib, json, os, re, subprocess, sys, threading, time, urllib.request, uuid
 
 
 def load_env(env_path=None):
@@ -55,6 +55,7 @@ if API_URL and not API_URL.endswith(("/v1/messages", "/messages")):
     API_URL = API_URL.rstrip("/") + "/v1/messages"
 
 MODEL = os.environ.get("MODEL", "anthropic/claude-opus-4.5" if OPENROUTER_KEY else "claude-opus-4-5")
+SESSION_ID = str(uuid.uuid4())
 
 # ANSI colors | ANSI 颜色代码
 RESET, BOLD, DIM = "\033[0m", "\033[1m", "\033[2m"
@@ -297,6 +298,7 @@ def call_api(messages, system_prompt):
         headers={
             "Content-Type": "application/json",
             "anthropic-version": "2023-06-01",
+            "x-opencode-session": SESSION_ID,
             **({"Authorization": f"Bearer {OPENROUTER_KEY}"} if OPENROUTER_KEY else {"x-api-key": os.environ.get("ANTHROPIC_API_KEY", "")}),
         },
     )

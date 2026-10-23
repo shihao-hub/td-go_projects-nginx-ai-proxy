@@ -11,16 +11,23 @@ import (
 )
 
 type Config struct {
-	Port        string
-	ProxyKey    string
-	GlmKey      string
-	GlmUpstream string
-	GlmPath     string
-	ConfDst     string
+	Port          string
+	ProxyKey      string
+	UpstreamKey   string
+	UpstreamURL   string
+	UpstreamModel string
+	ProxyPrefix   string
+	ConfDst       string
 }
 
 func defaults() Config {
-	return Config{Port: "8088", GlmUpstream: "https://open.bigmodel.cn/api/anthropic/", ConfDst: "/etc/nginx/conf.d/aiproxy.conf"}
+	return Config{
+		Port:          "8088",
+		UpstreamURL:   "https://opencode.ai/inference/go/anthropic/",
+		UpstreamModel: "deepseek-v4.1-flash",
+		ProxyPrefix:   "/api/anthropic/",
+		ConfDst:       "/etc/nginx/conf.d/aiproxy.conf",
+	}
 }
 
 // Load 读取 .env 文件（KEY=VALUE，每行一个，支持 # 注释）
@@ -50,11 +57,21 @@ func Load(path string) (Config, error) {
 	if v, ok := m["PROXY_KEY"]; ok {
 		c.ProxyKey = v
 	}
-	if v, ok := m["GLM_KEY"]; ok {
-		c.GlmKey = v
+	if v, ok := m["UPSTREAM_KEY"]; ok {
+		c.UpstreamKey = v
+	} else if v, ok := m["GLM_KEY"]; ok {
+		c.UpstreamKey = v
 	}
-	if v, ok := m["GLM_UPSTREAM"]; ok && v != "" {
-		c.GlmUpstream = v
+	if v, ok := m["UPSTREAM_URL"]; ok && v != "" {
+		c.UpstreamURL = v
+	} else if v, ok := m["GLM_UPSTREAM"]; ok && v != "" {
+		c.UpstreamURL = v
+	}
+	if v, ok := m["UPSTREAM_MODEL"]; ok && v != "" {
+		c.UpstreamModel = v
+	}
+	if v, ok := m["PROXY_PREFIX"]; ok && v != "" {
+		c.ProxyPrefix = v
 	}
 	if v, ok := m["NGINX_CONF_DST"]; ok && v != "" {
 		c.ConfDst = v
@@ -62,23 +79,34 @@ func Load(path string) (Config, error) {
 	if err := s.Err(); err != nil {
 		return c, err
 	}
-	u, err := url.Parse(c.GlmUpstream)
+	u, err := url.Parse(c.UpstreamURL)
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return c, fmt.Errorf("GLM_UPSTREAM 无效: %s", c.GlmUpstream)
+		return c, fmt.Errorf("UPSTREAM_URL 无效: %s", c.UpstreamURL)
 	}
-	c.GlmPath = u.Path
-	if c.GlmPath == "" {
-		c.GlmPath = "/"
-	}
+	c.ProxyPrefix = normalizePrefix(c.ProxyPrefix)
 	return c, nil
+}
+
+func normalizePrefix(p string) string {
+	p = strings.TrimSpace(p)
+	if p == "" {
+		return "/"
+	}
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	if !strings.HasSuffix(p, "/") {
+		p += "/"
+	}
+	return p
 }
 
 func (c Config) Validate() error {
 	if c.ProxyKey == "" || c.ProxyKey == "sk-proxy-CHANGE_ME" {
 		return fmt.Errorf("PROXY_KEY 未配置，请先执行 aiproxy keygen --write")
 	}
-	if c.GlmKey == "" || c.GlmKey == "CHANGE_ME_GLM_KEY" {
-		return fmt.Errorf("GLM_KEY 未配置")
+	if c.UpstreamKey == "" || c.UpstreamKey == "CHANGE_ME_OPENCODE_KEY" || c.UpstreamKey == "CHANGE_ME_GLM_KEY" {
+		return fmt.Errorf("UPSTREAM_KEY 未配置")
 	}
 	return nil
 }

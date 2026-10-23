@@ -1,4 +1,9 @@
 # 由 aiproxy 自动渲染，请勿手工覆盖
+map $http_x_opencode_session $aiproxy_session {
+    default $http_x_opencode_session;
+    ""      $request_id;
+}
+
 server {
     listen {{ .Port }};
     server_name _;
@@ -7,7 +12,7 @@ server {
     proxy_send_timeout 600s;
     proxy_read_timeout 600s;
 
-    location {{ .GlmPath }} {
+    location {{ .ProxyPrefix }} {
         default_type application/json;
         set $auth_pass 0;
         if ($http_authorization = "Bearer {{ .ProxyKey }}") {
@@ -20,13 +25,15 @@ server {
             return 401 '{"error":{"type":"authentication_error","message":"Invalid proxy API key"}}';
         }
 
-        proxy_pass {{ .GlmUpstream }};
+        proxy_pass {{ .UpstreamURL }};
         proxy_ssl_server_name on;
         proxy_ssl_protocols TLSv1.2 TLSv1.3;
 
-        proxy_set_header Authorization "Bearer {{ .GlmKey }}";
-        proxy_set_header x-api-key "{{ .GlmKey }}";
-        proxy_set_header Host open.bigmodel.cn;
+        proxy_set_header Authorization "Bearer {{ .UpstreamKey }}";
+        proxy_set_header x-api-key "{{ .UpstreamKey }}";
+        proxy_set_header Host $proxy_host;
+        proxy_set_header User-Agent "nginx-ai-proxy/1.0";
+        proxy_set_header x-opencode-session $aiproxy_session;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
